@@ -7,9 +7,10 @@ const promptInput = document.getElementById("promptInput");
 const finalPrompt = document.getElementById("finalPrompt");
 const viewer = document.getElementById("viewer");
 const downloadBtn = document.getElementById("downloadBtn");
+const styleSelect = document.getElementById("styleSelect");
 
-let progressWrapper, progressBar, progressText;
 let scene, camera, renderer, controls;
+let progressWrapper, progressBar, progressText;
 
 function initViewer() {
   viewer.innerHTML = "";
@@ -23,10 +24,10 @@ function initViewer() {
   renderer.setSize(viewer.clientWidth, viewer.clientHeight);
   viewer.appendChild(renderer.domElement);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 1.2);
-  const directional = new THREE.DirectionalLight(0xffffff, 1);
-  directional.position.set(2, 2, 2);
-  scene.add(ambient, directional);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(2, 2, 2);
+  scene.add(ambientLight, directionalLight);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -62,8 +63,7 @@ function showProgressBar() {
   progressText.id = "progressText";
   progressText.innerText = "Bezig met genereren...";
 
-  progressWrapper.appendChild(progressBar);
-  progressWrapper.appendChild(progressText);
+  progressWrapper.append(progressText, progressBar);
   finalPrompt.appendChild(progressWrapper);
 }
 
@@ -83,22 +83,21 @@ function hideProgressBar() {
   }
 }
 
-async function requestTripoTask(prompt) {
-  const response = await fetch("/api/tripo", {
+async function requestTripoTask(prompt, modelType) {
+  const res = await fetch("/api/tripo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
+    body: JSON.stringify({ prompt, model_type: modelType })
   });
 
-  const data = await response.json();
-  if (!data.taskId) {
-    throw new Error("Geen taskId ontvangen van Tripo API");
-  }
+  const data = await res.json();
+  if (!data.taskId) throw new Error("Geen taskId ontvangen van Tripo API");
   return data.taskId;
 }
 
 async function pollForModel(taskId) {
   showProgressBar();
+
   return new Promise((resolve, reject) => {
     const interval = setInterval(async () => {
       try {
@@ -115,25 +114,27 @@ async function pollForModel(taskId) {
           resolve(data.modelUrl);
         } else if (data.status === "failed") {
           clearInterval(interval);
-          reject("Model generatie mislukt.");
+          reject("❌ Model generatie mislukt.");
         }
       } catch (err) {
         clearInterval(interval);
-        reject("Fout bij polling: " + err.message);
+        reject("❌ Fout bij polling: " + err.message);
       }
     }, 3000);
   });
 }
 
-// 👉 Entry point
 generateBtn.addEventListener("click", async () => {
   const rawPrompt = promptInput.value.trim();
-  finalPrompt.innerHTML = `🧠 Tripo genereert 3D model voor: <strong>"${rawPrompt}"</strong>`;
+  const selectedStyle = styleSelect.value;
 
+  if (!rawPrompt) return alert("⚠️ Vul een prompt in.");
+
+  finalPrompt.innerHTML = `🧠 Tripo genereert 3D model voor: <strong>"${rawPrompt}"</strong>`;
   initViewer();
 
   try {
-    const taskId = await requestTripoTask(rawPrompt);
+    const taskId = await requestTripoTask(rawPrompt, selectedStyle);
     finalPrompt.innerHTML += "<br>🕒 Wachten op modelgeneratie...";
 
     const modelUrl = await pollForModel(taskId);
