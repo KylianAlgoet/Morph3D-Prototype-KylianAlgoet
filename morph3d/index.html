@@ -25,17 +25,22 @@
 
       <button id="generateBtn">Genereer</button>
 
+      <!-- ✅ Live voortgangsbalk -->
+      <div id="progressBarWrapper" style="display: none; margin: 20px 0;">
+        <div id="progressText">⏳ Even geduld...</div>
+        <progress id="progressBar" max="100" value="0" style="width: 100%; height: 20px;"></progress>
+      </div>
+
       <div id="output">
         <p><strong>Gegenereerde prompt:</strong></p>
         <p id="finalPrompt"></p>
       </div>
 
-      <div id="viewer" style="width: 100%; height: 400px; margin-top: 20px"></div>
-      <button id="downloadBtn" style="display:none;">Download dit model</button>
-
+      <div id="viewer" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+      <button id="downloadBtn" style="display: none;">Download dit model</button>
     </div>
 
-    <!-- ✅ Hier laad je de JS entry point van Vite -->
+    <!-- ✅ Vite entry -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

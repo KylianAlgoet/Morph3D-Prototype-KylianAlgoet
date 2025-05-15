@@ -1,67 +1,85 @@
+// ✅ server.js - Proxy naar Tripo 3D API (met progress feedback)
+
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const TRIPO_API_KEY = process.env.TRIPO_API_KEY;
+const TRIPO_START_URL = "https://api.tripo3d.ai/v2/openapi/task";
+const TRIPO_STATUS_URL = "https://api.tripo3d.ai/v2/openapi/task/";
 
-app.post("/api/chat", async (req, res) => {
-  const userPrompt = req.body.prompt;
-  console.log("🔍 Ontvangen prompt:", userPrompt); // ✅ Debug
+// ✅ Stap 1: Start taak aanmaken
+app.post("/api/tripo", async (req, res) => {
+  const { prompt } = req.body;
+  console.log("🧠 Prompt ontvangen:", prompt);
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(TRIPO_START_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${TRIPO_API_KEY}`,
       },
       body: JSON.stringify({
-model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `
-Je bent een AI die prompts in Nederlands of Engels ontvangt en exact één van onderstaande 3D-modelnamen moet teruggeven (enkel de naam, in lowercase):
-
-- sword
-- robot
-- tree
-- gun
-- car
-- default
-
-Voorbeelden:
-"een futuristische robot" → robot  
-"een magische boom" → tree  
-"een oude auto met roest" → car  
-"blaster gun uit de ruimte" → gun  
-"een mes" → sword  
-"iets onbekends" → default
-
-⚠️ Geef enkel de modelnaam terug, zonder uitleg of leestekens.
-`
-          },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
+        type: "text_to_model",
+        prompt,
       }),
     });
 
-    const data = await response.json();
-    console.log("🧠 GPT Response:", JSON.stringify(data, null, 2)); // ✅ Extra debug
+    const raw = await response.text();
+    const data = JSON.parse(raw);
+    console.log("🧪 Tripo start response:", data);
 
-    const reply = data.choices?.[0]?.message?.content?.trim().toLowerCase() || "default";
-    res.json({ model: reply });
+    if (data?.data?.task_id) {
+      res.json({ taskId: data.data.task_id });
+    } else {
+      res.status(500).json({ error: "❌ Geen taskId ontvangen van Tripo API" });
+    }
   } catch (err) {
-    console.error("❌ OpenAI API error:", err);
-    res.status(500).json({ model: "default", error: "API error" });
+    console.error("❌ Tripo API error:", err.message);
+    res.status(500).json({ error: "API error" });
   }
 });
 
-app.listen(3001, () => console.log("✅ GPT proxy draait op http://localhost:3001"));
+// ✅ Stap 2: Poll status + stuur ook progress percentage mee
+app.get("/api/tripo/status/:taskId", async (req, res) => {
+  const taskId = req.params.taskId;
+  console.log("🔁 Polling task:", taskId);
+
+  try {
+    const response = await fetch(`${TRIPO_STATUS_URL}${taskId}`, {
+      headers: {
+        Authorization: `Bearer ${TRIPO_API_KEY}`,
+      },
+    });
+
+    const raw = await response.text();
+    const data = JSON.parse(raw);
+    console.log("📦 Polling response:", data);
+
+    const status = data?.data?.status;
+    const modelUrl = data?.data?.output?.pbr_model;
+    const progress = data?.data?.progress ?? 0;
+
+    if (status === "success" && modelUrl) {
+      res.json({ status: "success", modelUrl, progress: 100 });
+    } else if (status === "failed") {
+      res.json({ status: "failed", progress });
+    } else {
+      res.json({ status: status || "pending", progress });
+    }
+  } catch (err) {
+    console.error("❌ Polling error:", err.message);
+    res.status(500).json({ error: "Poll error" });
+  }
+});
+
+app.listen(3001, () =>
+  console.log("✅ Tripo proxy draait op http://localhost:3001")
+);

@@ -1,98 +1,156 @@
-// ✅ Morph3D - Volledig AI-gestuurde model loader met GPT interpretatie via proxy
-
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const generateBtn = document.getElementById("generateBtn");
 const promptInput = document.getElementById("promptInput");
-const styleSelect = document.getElementById("styleSelect");
 const finalPrompt = document.getElementById("finalPrompt");
 const viewer = document.getElementById("viewer");
 const downloadBtn = document.getElementById("downloadBtn");
 
-let currentBlobURL = null;
+let progressWrapper, progressBar, progressText;
+let scene, camera, renderer, controls;
 
-// Externe glb bestanden (open source of raw GitHub URLs)
-const MODEL_URLS = {
-  sword: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/SimpleMesh/glTF-Binary/SimpleMesh.glb",
-  robot: "https://models.babylonjs.com/robot.glb",
-  tree: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
-  gun: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb",
-  car: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb",
-  default: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb"
-};
-
-
-
-async function getModelFromGPT(prompt) {
-const res = await fetch("/api/chat", {
-  
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-
-const data = await res.json();
-console.log("📦 Server response:", data);
-return data.model || "default";
-
-}
-
-generateBtn.addEventListener("click", async () => {
-  const rawPrompt = promptInput.value.trim();
-  const style = styleSelect.value;
-
-  finalPrompt.innerHTML = `🧠 AI denkt na over je prompt...`;
-  const mappedKey = await getModelFromGPT(rawPrompt);
-  const modelURL = MODEL_URLS[mappedKey] || MODEL_URLS["default"];
-
-  finalPrompt.innerHTML = `AI begrijpt je prompt als: <strong>${mappedKey}</strong><br>Model wordt geladen...`;
-  loadGLBModel(modelURL);
-
-  // Downloadknop instellen
-  downloadBtn.style.display = "inline-block";
-  downloadBtn.onclick = () => {
-    const a = document.createElement("a");
-    a.href = modelURL;
-    a.download = `${mappedKey}.glb`;
-    a.click();
-  };
-});
-
-function loadGLBModel(url) {
+function initViewer() {
   viewer.innerHTML = "";
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf0f0f0);
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a0a);
 
-  const camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
-  camera.position.z = 2;
+  camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+  camera.position.z = 3;
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(viewer.clientWidth, viewer.clientHeight);
   viewer.appendChild(renderer.domElement);
 
-  const light = new THREE.AmbientLight(0xffffff, 1.5);
-  scene.add(light);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+  const directional = new THREE.DirectionalLight(0xffffff, 1);
+  directional.position.set(2, 2, 2);
+  scene.add(ambient, directional);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-  dirLight.position.set(2, 2, 2);
-  scene.add(dirLight);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.enableZoom = true;
+}
 
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function loadGLBModel(url) {
   const loader = new GLTFLoader();
   loader.load(url, (gltf) => {
     scene.add(gltf.scene);
     animate();
   });
+}
 
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+function showProgressBar() {
+  hideProgressBar();
+  progressWrapper = document.createElement("div");
+  progressWrapper.id = "progressBarWrapper";
+
+  progressBar = document.createElement("progress");
+  progressBar.id = "progressBar";
+  progressBar.max = 100;
+  progressBar.value = 0;
+
+  progressText = document.createElement("div");
+  progressText.id = "progressText";
+  progressText.innerText = "Bezig met genereren...";
+
+  progressWrapper.appendChild(progressBar);
+  progressWrapper.appendChild(progressText);
+  finalPrompt.appendChild(progressWrapper);
+}
+
+function updateProgress(percent, status) {
+  if (progressBar && progressText) {
+    progressBar.value = percent;
+    progressText.innerText = `${status} (${percent}%)`;
   }
 }
+
+function hideProgressBar() {
+  if (progressWrapper) {
+    progressWrapper.remove();
+    progressWrapper = null;
+    progressBar = null;
+    progressText = null;
+  }
+}
+
+async function requestTripoTask(prompt) {
+  const response = await fetch("/api/tripo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const data = await response.json();
+  if (!data.taskId) {
+    throw new Error("Geen taskId ontvangen van Tripo API");
+  }
+  return data.taskId;
+}
+
+async function pollForModel(taskId) {
+  showProgressBar();
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/tripo/status/${taskId}`);
+        const data = await res.json();
+
+        const percent = Math.min(Math.max(data.progress ?? 0, 0), 100);
+        updateProgress(percent, "Bezig met genereren...");
+
+        if (data.status === "success" && data.modelUrl) {
+          updateProgress(100, "Klaar!");
+          clearInterval(interval);
+          setTimeout(hideProgressBar, 1000);
+          resolve(data.modelUrl);
+        } else if (data.status === "failed") {
+          clearInterval(interval);
+          reject("Model generatie mislukt.");
+        }
+      } catch (err) {
+        clearInterval(interval);
+        reject("Fout bij polling: " + err.message);
+      }
+    }, 3000);
+  });
+}
+
+// 👉 Entry point
+generateBtn.addEventListener("click", async () => {
+  const rawPrompt = promptInput.value.trim();
+  finalPrompt.innerHTML = `🧠 Tripo genereert 3D model voor: <strong>"${rawPrompt}"</strong>`;
+
+  initViewer();
+
+  try {
+    const taskId = await requestTripoTask(rawPrompt);
+    finalPrompt.innerHTML += "<br>🕒 Wachten op modelgeneratie...";
+
+    const modelUrl = await pollForModel(taskId);
+    finalPrompt.innerHTML = `✅ Model gegenereerd!`;
+
+    loadGLBModel(modelUrl);
+
+    downloadBtn.style.display = "inline-block";
+    downloadBtn.onclick = () => {
+      const a = document.createElement("a");
+      a.href = modelUrl;
+      a.download = "generated_model.glb";
+      a.click();
+    };
+  } catch (err) {
+    finalPrompt.innerHTML = `❌ Fout: ${err}`;
+    console.error(err);
+    hideProgressBar();
+  }
+});
