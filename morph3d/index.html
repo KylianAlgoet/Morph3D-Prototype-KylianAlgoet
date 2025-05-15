@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Morph3D – Text to 3D</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Morph3D</h1>
+      <p>Voer een prompt in en genereer een 3D-model!</p>
+
+      <textarea
+        id="promptInput"
+        placeholder="Bijv. 'Een magisch zwaard met blauwe kristallen'"
+      ></textarea>
+
+      <label for="styleSelect">Stijl:</label>
+      <select id="styleSelect">
+        <option value="realistisch">Realistisch</option>
+        <option value="lowpoly">Low Poly</option>
+        <option value="cartoon">Cartoon</option>
+      </select>
+
+      <button id="generateBtn">Genereer</button>
+
+      <div id="output">
+        <p><strong>Gegenereerde prompt:</strong></p>
+        <p id="finalPrompt"></p>
+      </div>
+
+      <div id="viewer" style="width: 100%; height: 400px; margin-top: 20px"></div>
+    </div>
+
+    <!-- ✅ Hier laad je de JS entry point van Vite -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
