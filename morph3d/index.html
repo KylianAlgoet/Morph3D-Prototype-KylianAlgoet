@@ -6,84 +6,59 @@
     <title>Morph3D – Text to 3D</title>
     <link rel="stylesheet" href="/src/style.css" />
     <style>
-      .viewer-container {
-        display: flex;
-        gap: 20px;
-        margin-top: 20px;
-        flex-wrap: wrap;
-        align-items: flex-start;
-      }
-
-      .viewer-box {
-        flex: 1 1 100%;
-        min-width: 300px;
-        height: 400px;
-        background: #111;
-        border-radius: 10px;
-        overflow: hidden;
-      }
-
-      #downloadBtn {
-        margin-top: 10px;
-      }
-
-      #enhanceBtn {
-        margin-top: 10px;
-        background-color: #00ffc3;
-        color: #000;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-      }
-
-      #enhanceBtn:hover {
-        background-color: #00ddb1;
+      .hidden {
+        display: none !important;
       }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>Morph3D</h1>
-      <p>Voer een prompt in en genereer een 3D-model!</p>
+      <p>Enter a prompt and generate a 3D model!</p>
 
       <textarea
         id="promptInput"
-        placeholder="Bijv. 'Een magisch zwaard met blauwe kristallen'"
+        placeholder="E.g. 'A magical sword with glowing blue crystals'"
       ></textarea>
 
-      <label for="styleSelect">Stijl:</label>
+      <label for="styleSelect">Style:</label>
       <select id="styleSelect">
-        <option value="realistic">Realistisch</option>
-        <option value="low_poly">Low Poly</option>
-        <option value="stylized">Cartoon</option>
+        <option value="">Default (no style)</option>
+        <option value="person:person2cartoon">👤 Cartoon (human)</option>
+        <option value="animal:venom">🐍 Venom-style (animal)</option>
+        <option value="object:clay">🧱 Clay (object style)</option>
+        <option value="object:steampunk">⚙️ Steampunk</option>
+        <option value="object:christmas">🎄 Christmas Theme</option>
+        <option value="object:barbie">🎀 Barbie Style</option>
+        <option value="gold">🏆 Gold</option>
+        <option value="ancient_bronze">🛡️ Ancient Bronze</option>
       </select>
 
-      <!-- ✅ Prompt Enhancer -->
-      <button id="enhanceBtn">✨ Verbeter prompt</button>
+      <button id="enhanceBtn">✨ Enhance Prompt</button>
+      <button id="generateBtn">Generate</button>
 
-      <button id="generateBtn" style="margin-top: 10px;">Genereer</button>
-
-      <!-- ✅ Live voortgangsbalk -->
-      <div id="progressBarWrapper" style="display: none; margin: 20px 0;">
-        <div id="progressText">⏳ Even geduld...</div>
-        <progress id="progressBar" max="100" value="0" style="width: 100%; height: 20px;"></progress>
+      <!-- Progress Bar (verborgen) -->
+      <div id="progressBarWrapper" class="hidden">
+        <div id="progressText">⏳ Please wait...</div>
+        <progress id="progressBar" max="100" value="0"></progress>
       </div>
 
-      <div id="output">
-        <p><strong>Gegenereerde prompt:</strong></p>
+      <!-- Output (verborgen) -->
+      <div id="output" class="hidden">
+        <p><strong>Final Prompt:</strong></p>
         <p id="finalPrompt"></p>
       </div>
 
+      <!-- Viewer (verborgen) -->
       <div class="viewer-container">
-        <div id="viewer" class="viewer-box"></div>
+        <div id="viewer" class="viewer-box hidden"></div>
       </div>
 
-      <button id="downloadBtn" style="display: none;">Download dit model</button>
+      <!-- Download-knop (verborgen) -->
+      <button id="downloadBtn" class="hidden">Download this model</button>
     </div>
 
-    <!-- ✅ Vite entry -->
+    <!-- Vite entry -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

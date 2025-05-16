@@ -9,11 +9,19 @@ const finalPrompt = document.getElementById("finalPrompt");
 const viewer = document.getElementById("viewer");
 const downloadBtn = document.getElementById("downloadBtn");
 const styleSelect = document.getElementById("styleSelect");
+const outputBox = document.getElementById("output");
+const progressBarWrapper = document.getElementById("progressBarWrapper");
 
 let scene1, camera1, renderer1, controls1;
 
+// Hide everything except prompt by default
+viewer.classList.add("hidden");
+outputBox.classList.add("hidden");
+downloadBtn.classList.add("hidden");
+progressBarWrapper.classList.add("hidden");
+
 function initViewer(container) {
-  container.innerHTML = "";
+  container.innerHTML = ""; // Clear previous model
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0a0a);
@@ -53,10 +61,10 @@ function loadGLBModel(url, scene) {
 }
 
 function showProgressBar() {
-  document.getElementById("progressBarWrapper").style.display = "block";
+  progressBarWrapper.classList.remove("hidden");
   const progressText = document.getElementById("progressText");
   const progressBar = document.getElementById("progressBar");
-  progressText.innerText = "Bezig met genereren...";
+  progressText.innerText = "Generating...";
   progressBar.value = 0;
 }
 
@@ -70,76 +78,24 @@ function updateProgress(percent, status) {
 }
 
 function hideProgressBar() {
-  document.getElementById("progressBarWrapper").style.display = "none";
-}
-
-async function enhancePrompt(prompt) {
-  const response = await fetch("/api/openai/enhance", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-
-  const data = await response.json();
-  return data.enhancedPrompt || prompt;
-}
-
-async function requestTripoTask(prompt, modelType) {
-  const res = await fetch("/api/tripo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, model_type: modelType })
-  });
-
-  const data = await res.json();
-  if (!data.taskId) throw new Error("Geen taskId ontvangen van Tripo API");
-  return data.taskId;
-}
-
-async function pollForModel(taskId) {
-  showProgressBar();
-
-  return new Promise((resolve, reject) => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/tripo/status/${taskId}`);
-        const data = await res.json();
-
-        const percent = Math.min(Math.max(data.progress ?? 0, 0), 100);
-        updateProgress(percent, "Bezig met genereren...");
-
-        if (data.status === "success" && data.modelUrl) {
-          updateProgress(100, "Klaar!");
-          clearInterval(interval);
-          setTimeout(hideProgressBar, 1000);
-          resolve(data.modelUrl);
-        } else if (data.status === "failed") {
-          clearInterval(interval);
-          reject("❌ Model generatie mislukt.");
-        }
-      } catch (err) {
-        clearInterval(interval);
-        reject("❌ Fout bij polling: " + err.message);
-      }
-    }, 3000);
-  });
+  progressBarWrapper.classList.add("hidden");
 }
 
 enhanceBtn.addEventListener("click", async () => {
   const prompt = promptInput.value.trim();
-  if (!prompt) return alert("⚠️ Vul eerst een prompt in om te verbeteren.");
+  if (!prompt) return alert("⚠️ Please enter a prompt to enhance.");
 
-  enhanceBtn.textContent = "Verbeteren...";
+  enhanceBtn.textContent = "Enhancing...";
   enhanceBtn.disabled = true;
 
   try {
     const enhanced = await enhancePrompt(prompt);
     promptInput.value = enhanced;
-    enhanceBtn.textContent = "✅ Verbeterd!";
+    enhanceBtn.textContent = "✅ Enhanced!";
   } catch (err) {
-    console.error("❌ Prompt verbeteren mislukt:", err);
-    alert("Er ging iets mis bij het verbeteren van de prompt.");
-    enhanceBtn.textContent = "✨ Verbeter prompt";
+    console.error("❌ Prompt enhancement failed:", err);
+    alert("Something went wrong while enhancing the prompt.");
+    enhanceBtn.textContent = "✨ Enhance prompt";
   } finally {
     enhanceBtn.disabled = false;
   }
@@ -147,26 +103,34 @@ enhanceBtn.addEventListener("click", async () => {
 
 generateBtn.addEventListener("click", async () => {
   const prompt = promptInput.value.trim();
-  const selectedStyle = styleSelect.value;
+  let selectedStyle = styleSelect.value;
+  if (!selectedStyle || selectedStyle === "") {
+    selectedStyle = undefined; // fallback to default Tripo style
+  }
 
-  if (!prompt) return alert("⚠️ Vul een prompt in.");
+  if (!prompt) return alert("⚠️ Please enter a prompt.");
 
-  finalPrompt.innerHTML = "";
-  downloadBtn.style.display = "none";
+  // Hide everything before generation
+  viewer.classList.add("hidden");
+  downloadBtn.classList.add("hidden");
+  outputBox.classList.remove("hidden");
+  showProgressBar();
 
   try {
-    finalPrompt.innerHTML = "🕒 Model wordt gegenereerd...";
+    finalPrompt.innerHTML = "🕒 Generating model...";
 
     const taskId = await requestTripoTask(prompt, selectedStyle);
     const modelUrl = await pollForModel(taskId);
 
-    finalPrompt.innerHTML = "✅ Model klaar!";
+    finalPrompt.innerHTML = "✅ Model ready!";
 
+    // Only show viewer and download button when done
+    viewer.classList.remove("hidden");
     const viewer1 = initViewer(viewer);
     scene1 = viewer1.scene;
     loadGLBModel(modelUrl, scene1);
 
-    downloadBtn.style.display = "inline-block";
+    downloadBtn.classList.remove("hidden");
     downloadBtn.onclick = () => {
       const a = document.createElement("a");
       a.href = modelUrl;
@@ -174,8 +138,61 @@ generateBtn.addEventListener("click", async () => {
       a.click();
     };
   } catch (err) {
-    finalPrompt.innerHTML = `❌ Fout: ${err}`;
+    finalPrompt.innerHTML = `❌ Error: ${err}`;
     console.error(err);
+  } finally {
     hideProgressBar();
   }
 });
+
+async function enhancePrompt(prompt) {
+  const response = await fetch("/api/openai/enhance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  const data = await response.json();
+  return data.enhancedPrompt || prompt;
+}
+
+async function requestTripoTask(prompt, model_type) {
+  const res = await fetch("/api/tripo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt,
+      model_type: model_type !== "" ? model_type : undefined,
+    }),
+  });
+
+  const data = await res.json();
+  if (!data.taskId) throw new Error("No taskId received from Tripo API");
+  return data.taskId;
+}
+
+async function pollForModel(taskId) {
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/tripo/status/${taskId}`);
+        const data = await res.json();
+
+        const percent = Math.min(Math.max(data.progress ?? 0, 0), 100);
+        updateProgress(percent, "Generating...");
+
+        if (data.status === "success" && data.modelUrl) {
+          updateProgress(100, "Done!");
+          clearInterval(interval);
+          setTimeout(() => hideProgressBar(), 1000);
+          resolve(data.modelUrl);
+        } else if (data.status === "failed") {
+          clearInterval(interval);
+          reject("❌ Model generation failed.");
+        }
+      } catch (err) {
+        clearInterval(interval);
+        reject("❌ Polling error: " + err.message);
+      }
+    }, 3000);
+  });
+}
