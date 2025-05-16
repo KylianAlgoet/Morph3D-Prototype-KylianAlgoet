@@ -14,7 +14,7 @@ const TRIPO_START_URL = "https://api.tripo3d.ai/v2/openapi/task";
 const TRIPO_STATUS_URL = "https://api.tripo3d.ai/v2/openapi/task/";
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-// ✅ AI Prompt Enhancer — now in ENGLISH
+//AI Prompt Enhancer 
 app.post("/api/openai/enhance", async (req, res) => {
   const { prompt } = req.body;
 
@@ -54,7 +54,7 @@ app.post("/api/openai/enhance", async (req, res) => {
   }
 });
 
-// ✅ Tripo: Start new task
+//Tripo: Start new task
 app.post("/api/tripo", async (req, res) => {
   const { prompt, model_type } = req.body;
 
@@ -94,7 +94,7 @@ app.post("/api/tripo", async (req, res) => {
   }
 });
 
-// ✅ Tripo: Poll for model status
+//Tripo: Poll for model status
 app.get("/api/tripo/status/:taskId", async (req, res) => {
   const taskId = req.params.taskId;
   console.log("🔁 Polling task:", taskId);
@@ -126,5 +126,5 @@ app.get("/api/tripo/status/:taskId", async (req, res) => {
   }
 });
 
-// ✅ Start server
+//  Start server
 app.listen(3001, () => console.log("✅ Tripo proxy running on http://localhost:3001"));

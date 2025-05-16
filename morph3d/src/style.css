@@ -34,7 +34,7 @@ p {
 textarea {
   width: 100%;
   min-height: 105px;
-  max-height: 300px;   /* optioneel, zodat het niet oneindig groot wordt */
+  max-height: 300px;   
   font-size: 1.06rem;
   margin-bottom: 24px;
   margin-top: 8px;
@@ -48,7 +48,7 @@ textarea {
   transition: border 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
   display: block;
-  overflow: hidden; /* <-- Zorgt dat er geen scrollbalk komt! */
+  overflow: hidden; 
 }
 
 
@@ -157,7 +157,7 @@ button:hover:not(.rgb-glow), button:focus:not(.rgb-glow) {
   box-shadow: 0 0 14px #00ffe011;
   border: 1.5px solid #00ffe044;
   margin-bottom: 18px;
-  display: none; /* Default: hide, show via JS */
+  display: none; 
 }
 #output.active {
   display: block;
@@ -249,7 +249,7 @@ button:hover:not(.rgb-glow), button:focus:not(.rgb-glow) {
   border-top: 4px solid #00ffe0;
   border-right: 4px solid #00aaff;
   border-bottom: 4px solid #e700ff;
-  border-left: 4px solid #111; /* achterzijde fade */
+  border-left: 4px solid #111; 
   border-radius: 50%;
   animation: neonSpin 1.15s cubic-bezier(.75,.25,.35,1) infinite;
   margin-bottom: 10px;
@@ -303,10 +303,10 @@ button:hover:not(.rgb-glow), button:focus:not(.rgb-glow) {
   animation: fadeIn 0.16s;
   padding: 0;
   margin: 0;
-    max-height: 320px;   /* Of wat je wilt, bv. 300px */
+    max-height: 320px;   
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #00ffe0 #181818; /* Voor Firefox */
+  scrollbar-color: #00ffe0 #181818; 
 }
 
 .custom-select.open .options {
@@ -371,7 +371,6 @@ button:hover:not(.rgb-glow), button:focus:not(.rgb-glow) {
 }
 
 
-/* 🎬 Fade in animatie */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -383,7 +382,7 @@ button:hover:not(.rgb-glow), button:focus:not(.rgb-glow) {
   }
 }
 
-/* MOBILE FRIENDLY */
+
 @media (max-width: 650px) {
   .container {
     padding: 10px 2vw;

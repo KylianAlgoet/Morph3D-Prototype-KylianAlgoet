@@ -12,24 +12,24 @@ const styleSelect = document.getElementById("styleSelect");
 const outputBox = document.getElementById("output");
 const progressBarWrapper = document.getElementById("progressBarWrapper");
 
-// Hide everything except prompt by default
+
 viewer.classList.add("hidden");
 outputBox.classList.add("hidden");
 downloadBtn.classList.add("hidden");
 progressBarWrapper.classList.add("hidden");
 
-// Auto-grow textarea
+
 promptInput.addEventListener('input', function () {
   this.style.height = 'auto';
   this.style.height = (this.scrollHeight) + 'px';
 });
-// Set initial height
+
 promptInput.style.height = (promptInput.scrollHeight) + 'px';
 
 let scene1, camera1, renderer1, controls1;
 
 function initViewer(container) {
-  container.innerHTML = ""; // Clear previous model
+  container.innerHTML = ""; 
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0a0a);
@@ -99,7 +99,7 @@ enhanceBtn.addEventListener("click", async () => {
   try {
     const enhanced = await enhancePrompt(prompt);
     promptInput.value = enhanced;
-    // Auto-resize after enhancing
+   
     promptInput.style.height = 'auto';
     promptInput.style.height = (promptInput.scrollHeight) + 'px';
     enhanceBtn.textContent = "✅ Enhanced!";
@@ -116,12 +116,12 @@ generateBtn.addEventListener("click", async () => {
   const prompt = promptInput.value.trim();
   let selectedStyle = styleSelect.value;
   if (!selectedStyle || selectedStyle === "") {
-    selectedStyle = undefined; // fallback to default Tripo style
+    selectedStyle = undefined; 
   }
 
   if (!prompt) return alert("⚠️ Please enter a prompt.");
 
-  // Hide everything before generation
+ 
   viewer.classList.add("hidden");
   downloadBtn.classList.add("hidden");
   outputBox.classList.remove("hidden");
@@ -135,7 +135,7 @@ generateBtn.addEventListener("click", async () => {
 
     finalPrompt.innerHTML = "✅ Model ready!";
 
-    // Only show viewer and download button when done
+ 
     viewer.classList.remove("hidden");
     const viewer1 = initViewer(viewer);
     scene1 = viewer1.scene;
@@ -208,7 +208,7 @@ async function pollForModel(taskId) {
   });
   
 }
-// Custom Neon Select Dropdown
+
 const customSelect = document.getElementById("customStyleSelect");
 const selected = customSelect.querySelector(".selected");
 const options = customSelect.querySelector(".options");
@@ -226,7 +226,7 @@ options.onclick = (e) => {
     e.target.classList.add("active");
   }
 };
-// Sluit als je buiten klikt
+
 document.addEventListener("click", (e) => {
   if (!customSelect.contains(e.target)) customSelect.classList.remove("open");
 });
