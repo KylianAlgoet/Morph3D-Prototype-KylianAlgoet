@@ -24,17 +24,22 @@
   <span class="star">✨</span> Enhance Prompt
 </button>
       <label for="styleSelect">Style:</label>
-      <select id="styleSelect">
-        <option value="">Default (no style)</option>
-        <option value="person:person2cartoon">👤 Cartoon (human)</option>
-        <option value="animal:venom">🐍 Venom-style (animal)</option>
-        <option value="object:clay">🧱 Clay (object style)</option>
-        <option value="object:steampunk">⚙️ Steampunk</option>
-        <option value="object:christmas">🎄 Christmas Theme</option>
-        <option value="object:barbie">🎀 Barbie Style</option>
-        <option value="gold">🏆 Gold</option>
-        <option value="ancient_bronze">🛡️ Ancient Bronze</option>
-      </select>
+     <div class="custom-select" id="customStyleSelect">
+<div class="selected">Default (no style)</div>
+  <ul class="options">
+    <li data-value="">Default (no style)</li>
+    <li data-value="person:person2cartoon">👤 Cartoon (human)</li>
+    <li data-value="animal:venom">🦎 Venom-style (animal)</li>
+    <li data-value="object:clay">🧱 Clay (object style)</li>
+    <li data-value="object:steampunk">⚙️ Steampunk</li>
+    <li data-value="object:christmas">🎄 Christmas Theme</li>
+    <li data-value="object:barbie">🎀 Barbie Style</li>
+    <li data-value="gold">🏆 Gold</li>
+    <li data-value="ancient_bronze">🛡️ Ancient Bronze</li>
+  </ul>
+</div>
+<input type="hidden" id="styleSelect" name="styleSelect" value="">
+
 
   
 

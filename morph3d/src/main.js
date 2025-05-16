@@ -206,4 +206,27 @@ async function pollForModel(taskId) {
       }
     }, 3000);
   });
+  
 }
+// Custom Neon Select Dropdown
+const customSelect = document.getElementById("customStyleSelect");
+const selected = customSelect.querySelector(".selected");
+const options = customSelect.querySelector(".options");
+const hiddenInput = document.getElementById("styleSelect");
+
+selected.onclick = () => {
+  customSelect.classList.toggle("open");
+};
+options.onclick = (e) => {
+  if (e.target.tagName === "LI") {
+    selected.textContent = e.target.textContent;
+    hiddenInput.value = e.target.getAttribute("data-value");
+    customSelect.classList.remove("open");
+    for (let li of options.children) li.classList.remove("active");
+    e.target.classList.add("active");
+  }
+};
+// Sluit als je buiten klikt
+document.addEventListener("click", (e) => {
+  if (!customSelect.contains(e.target)) customSelect.classList.remove("open");
+});

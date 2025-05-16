@@ -257,6 +257,114 @@ button:hover:not(.rgb-glow), button:focus:not(.rgb-glow) {
   background: radial-gradient(circle at 60% 25%, #00fff7cc 0%, #111 65%);
 }
 
+.custom-select {
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+.custom-select .selected {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #131f1f 65%, #00ffe022 100%);
+  color: #00ffe0;
+  border: 2px solid #00ffe0;
+  font-weight: 800;
+  box-shadow: 0 0 20px #00ffe088, 0 0 2px #0ff;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: 0.5px;
+}
+
+.custom-select.open .selected,
+.custom-select .selected:hover {
+  border-color: #0ff;
+  box-shadow: 0 0 32px #00fff088, 0 0 8px #0ff;
+  background: #132828;
+}
+
+.custom-select .options {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 110%;
+  background: #101d1d;
+  border: 2px solid #00ffe0;
+  box-shadow: 0 0 40px #00ffe033;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 20;
+  display: none;
+  animation: fadeIn 0.16s;
+  padding: 0;
+  margin: 0;
+    max-height: 320px;   /* Of wat je wilt, bv. 300px */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #00ffe0 #181818; /* Voor Firefox */
+}
+
+.custom-select.open .options {
+  display: block;
+}
+
+.custom-select .options li {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 14px 26px 14px 20px;
+  color: #00ffe0;
+  font-weight: bold;
+  font-size: 1.10rem;
+  background: transparent;
+  border-bottom: 1px solid #00ffe01b;
+  cursor: pointer;
+  transition: background 0.17s, color 0.17s, box-shadow 0.18s;
+  position: relative;
+  box-shadow: none;
+}
+.custom-select .options li:last-child {
+  border-bottom: none;
+}
+
+.custom-select .options li .icon {
+  font-size: 1.33em;
+  margin-right: 4px;
+  filter: drop-shadow(0 0 7px #00ffe077);
+  flex-shrink: 0;
+  width: 1.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-select .options li.active,
+.custom-select .options li:hover {
+  background: linear-gradient(90deg, #162929 70%, #00ffe099 100%);
+  color: #fff;
+  box-shadow: 0 0 18px #00ffe0bb, 0 0 6px #0ff;
+  text-shadow: 0 0 9px #00fff7cc, 0 0 2px #00ffe0cc;
+  z-index: 2;
+  transition: background 0.18s, color 0.18s, text-shadow 0.15s;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.99);}
+  to   { opacity: 1; transform: scale(1);}
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.99);}
+  to   { opacity: 1; transform: scale(1);}
+}
+
 @keyframes neonSpin {
   0%   { transform: rotate(0deg);}
   100% { transform: rotate(360deg);}
