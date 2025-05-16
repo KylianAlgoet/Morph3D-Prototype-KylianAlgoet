@@ -12,13 +12,21 @@ const styleSelect = document.getElementById("styleSelect");
 const outputBox = document.getElementById("output");
 const progressBarWrapper = document.getElementById("progressBarWrapper");
 
-let scene1, camera1, renderer1, controls1;
-
 // Hide everything except prompt by default
 viewer.classList.add("hidden");
 outputBox.classList.add("hidden");
 downloadBtn.classList.add("hidden");
 progressBarWrapper.classList.add("hidden");
+
+// Auto-grow textarea
+promptInput.addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+});
+// Set initial height
+promptInput.style.height = (promptInput.scrollHeight) + 'px';
+
+let scene1, camera1, renderer1, controls1;
 
 function initViewer(container) {
   container.innerHTML = ""; // Clear previous model
@@ -91,6 +99,9 @@ enhanceBtn.addEventListener("click", async () => {
   try {
     const enhanced = await enhancePrompt(prompt);
     promptInput.value = enhanced;
+    // Auto-resize after enhancing
+    promptInput.style.height = 'auto';
+    promptInput.style.height = (promptInput.scrollHeight) + 'px';
     enhanceBtn.textContent = "✅ Enhanced!";
   } catch (err) {
     console.error("❌ Prompt enhancement failed:", err);
