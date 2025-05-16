@@ -3,84 +3,85 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const generateBtn = document.getElementById("generateBtn");
+const enhanceBtn = document.getElementById("enhanceBtn");
 const promptInput = document.getElementById("promptInput");
 const finalPrompt = document.getElementById("finalPrompt");
 const viewer = document.getElementById("viewer");
 const downloadBtn = document.getElementById("downloadBtn");
 const styleSelect = document.getElementById("styleSelect");
 
-let scene, camera, renderer, controls;
-let progressWrapper, progressBar, progressText;
+let scene1, camera1, renderer1, controls1;
 
-function initViewer() {
-  viewer.innerHTML = "";
-  scene = new THREE.Scene();
+function initViewer(container) {
+  container.innerHTML = "";
+
+  const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0a0a);
 
-  camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
   camera.position.z = 3;
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-  viewer.appendChild(renderer.domElement);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
   directionalLight.position.set(2, 2, 2);
   scene.add(ambientLight, directionalLight);
 
-  controls = new OrbitControls(camera, renderer.domElement);
+  const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.enableZoom = true;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  animate();
+  return { scene, camera, renderer, controls };
 }
 
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-
-function loadGLBModel(url) {
+function loadGLBModel(url, scene) {
   const loader = new GLTFLoader();
   loader.load(url, (gltf) => {
     scene.add(gltf.scene);
-    animate();
   });
 }
 
 function showProgressBar() {
-  hideProgressBar();
-  progressWrapper = document.createElement("div");
-  progressWrapper.id = "progressBarWrapper";
-
-  progressBar = document.createElement("progress");
-  progressBar.id = "progressBar";
-  progressBar.max = 100;
-  progressBar.value = 0;
-
-  progressText = document.createElement("div");
-  progressText.id = "progressText";
+  document.getElementById("progressBarWrapper").style.display = "block";
+  const progressText = document.getElementById("progressText");
+  const progressBar = document.getElementById("progressBar");
   progressText.innerText = "Bezig met genereren...";
-
-  progressWrapper.append(progressText, progressBar);
-  finalPrompt.appendChild(progressWrapper);
+  progressBar.value = 0;
 }
 
 function updateProgress(percent, status) {
-  if (progressBar && progressText) {
-    progressBar.value = percent;
+  const progressText = document.getElementById("progressText");
+  const progressBar = document.getElementById("progressBar");
+  if (progressText && progressBar) {
     progressText.innerText = `${status} (${percent}%)`;
+    progressBar.value = percent;
   }
 }
 
 function hideProgressBar() {
-  if (progressWrapper) {
-    progressWrapper.remove();
-    progressWrapper = null;
-    progressBar = null;
-    progressText = null;
-  }
+  document.getElementById("progressBarWrapper").style.display = "none";
+}
+
+async function enhancePrompt(prompt) {
+  const response = await fetch("/api/openai/enhance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const data = await response.json();
+  return data.enhancedPrompt || prompt;
 }
 
 async function requestTripoTask(prompt, modelType) {
@@ -124,23 +125,46 @@ async function pollForModel(taskId) {
   });
 }
 
-generateBtn.addEventListener("click", async () => {
-  const rawPrompt = promptInput.value.trim();
-  const selectedStyle = styleSelect.value;
+enhanceBtn.addEventListener("click", async () => {
+  const prompt = promptInput.value.trim();
+  if (!prompt) return alert("⚠️ Vul eerst een prompt in om te verbeteren.");
 
-  if (!rawPrompt) return alert("⚠️ Vul een prompt in.");
-
-  finalPrompt.innerHTML = `🧠 Tripo genereert 3D model voor: <strong>"${rawPrompt}"</strong>`;
-  initViewer();
+  enhanceBtn.textContent = "Verbeteren...";
+  enhanceBtn.disabled = true;
 
   try {
-    const taskId = await requestTripoTask(rawPrompt, selectedStyle);
-    finalPrompt.innerHTML += "<br>🕒 Wachten op modelgeneratie...";
+    const enhanced = await enhancePrompt(prompt);
+    promptInput.value = enhanced;
+    enhanceBtn.textContent = "✅ Verbeterd!";
+  } catch (err) {
+    console.error("❌ Prompt verbeteren mislukt:", err);
+    alert("Er ging iets mis bij het verbeteren van de prompt.");
+    enhanceBtn.textContent = "✨ Verbeter prompt";
+  } finally {
+    enhanceBtn.disabled = false;
+  }
+});
 
+generateBtn.addEventListener("click", async () => {
+  const prompt = promptInput.value.trim();
+  const selectedStyle = styleSelect.value;
+
+  if (!prompt) return alert("⚠️ Vul een prompt in.");
+
+  finalPrompt.innerHTML = "";
+  downloadBtn.style.display = "none";
+
+  try {
+    finalPrompt.innerHTML = "🕒 Model wordt gegenereerd...";
+
+    const taskId = await requestTripoTask(prompt, selectedStyle);
     const modelUrl = await pollForModel(taskId);
-    finalPrompt.innerHTML = `✅ Model gegenereerd!`;
 
-    loadGLBModel(modelUrl);
+    finalPrompt.innerHTML = "✅ Model klaar!";
+
+    const viewer1 = initViewer(viewer);
+    scene1 = viewer1.scene;
+    loadGLBModel(modelUrl, scene1);
 
     downloadBtn.style.display = "inline-block";
     downloadBtn.onclick = () => {
